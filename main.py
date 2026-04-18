@@ -3,11 +3,37 @@ import enhance
 import measure
 import numpy as np
 
+def contrast_stretch_vectorized(img, t, Imin, Imax, Lmin, Lmax):
+    """Vectorized piecewise linear contrast stretching with safe division."""
+    out = np.empty_like(img, dtype=np.float32)
+    mask_low = img <= t
+    mask_high = img > t
+
+    # Low part: map [Imin, t] -> [Lmin, t]
+    if np.any(mask_low):
+        if Imin == t:
+            # Entire low range collapses to a single output value
+            out[mask_low] = Lmin
+        else:
+            out[mask_low] = Lmin + (t - Lmin) * (img[mask_low] - Imin) / (t - Imin)
+
+    # High part: map (t, Imax] -> (t, Lmax]
+    if np.any(mask_high):
+        if Imax == t + 1:
+            # Entire high range collapses to a single output value
+            out[mask_high] = Lmax
+        else:
+            out[mask_high] = t + 1 + (Lmax - (t + 1)) * (img[mask_high] - (t + 1)) / (Imax - (t + 1))
+
+    # Clip and convert back to original dtype (e.g., uint8)
+    out = np.clip(out, Lmin, Lmax).astype(img.dtype)
+    return out
+
 def main():
     images = preprocess.load_dataset("output")
-    k1, k2 = 8, 8
+    k1, k2 = 20, 20
     c = 1
-    alpha = 0.5
+    alpha = 1
     Lmin, Lmax = 0, 255
 
     for idx, image in enumerate(images):
@@ -24,22 +50,10 @@ def main():
         }
 
         for t in range(0, 256):
-            if not (Imin < t < Imax):
-                continue
+            
+            stretched = contrast_stretch_vectorized(image, t, Imin, Imax, Lmin, Lmax)
 
-            new_image = np.zeros_like(image, dtype=np.uint8)
-            rows, cols = image.shape
-            for i in range(rows):
-                for j in range(cols):
-                    I = image[i, j]
-                    new_image[i, j] = enhance.contrast_stretching(I, t, Imin, Imax, Lmin, Lmax)
-
-            eme_val = measure.eme(new_image, k1, k2, c)
-            emee_val = measure.emee(new_image, k1, k2, c, alpha)
-            ame_val = measure.ame(new_image, k1, k2, c)
-            eme_log_val = measure.eme_log(new_image, k1, k2, c)
-            visibility_val = measure.visibility(new_image, k1, k2, c)
-            amee_val = measure.amee(new_image, k1, k2, c, alpha)
+            eme_val, emee_val, ame_val, eme_log_val, visibility_val, amee_val = measure.measure_all(stretched, k1, k2, c, alpha)
 
             if eme_val > best['eme'][0]:
                 best['eme'] = (eme_val, t)

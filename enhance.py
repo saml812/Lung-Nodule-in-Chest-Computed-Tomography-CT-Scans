@@ -18,14 +18,14 @@ def contrast_stretching(img, t, Imin, Imax, Lmin=0, Lmax=255):
     #[Imin, t] -> [Lmin, t]
     if np.any(low_mask):
         if Imin == t:
-            out[low_mask] = Lmin
+            out[low_mask] = Lmin # avoid division by zero
         else:
             out[low_mask] = (img[low_mask] - Imin) * ((t - Lmin) / (t - Imin)) + Lmin
 
     #(t, Imax] -> (t, Lmax]
     if np.any(high_mask):
         if Imax == t + 1:
-            out[high_mask] = Lmax
+            out[high_mask] = Lmax # avoid division by zero
         else:
             out[high_mask] = (img[high_mask] - (t + 1)) * ((Lmax - (t + 1)) / (Imax - (t + 1))) + (t + 1)
 

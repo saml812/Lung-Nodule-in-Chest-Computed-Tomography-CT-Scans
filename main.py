@@ -28,6 +28,9 @@ def main():
 
             eme_val, emee_val, ame_val, eme_log_val, visibility_val, amee_val = measure.measure_all(stretched, k1, k2, c, alpha)
 
+            # Plot metric vs t
+            
+
             if eme_val > best['eme'][0]:
                 best['eme'] = (eme_val, t)
             if emee_val > best['emee'][0]:

@@ -23,6 +23,19 @@ def main():
             'amee': (-np.inf, 0),
         }
 
+        # Before enhancement values
+        eme_val, emee_val, ame_val, eme_log_val, visibility_val, amee_val = measure.measure_all(image, k1, k2, c, alpha)
+        print(f"Image {idx+1} before enhancement metrics:")
+        print(f"eme: {eme_val:.4f}")
+        print(f"emee: {emee_val:.4f}")
+        print(f"ame: {ame_val:.4f}")
+        print(f"eme_log: {eme_log_val:.4f}")
+        print(f"visibility: {visibility_val:.4f}")
+        print(f"amee: {amee_val:.4f}")
+        print('\n')
+
+        eme_val, emee_val, ame_val, eme_log_val, visibility_val, amee_val = 0,0,0,0,0,0
+
         for t in range(0, 256):
             stretched = enhance.contrast_stretching(image, t, Imin, Imax, Lmin, Lmax)
 
@@ -47,6 +60,7 @@ def main():
         print(f"Image {idx+1} best t values:")
         for metric, (val, t_opt) in best.items():
             print(f"  {metric}: t = {t_opt} (value = {val:.4f})")
+        print('\n')
 
 if __name__ == "__main__":
     main()

@@ -57,10 +57,66 @@ def main():
             if amee_val > best['amee'][0]:
                 best['amee'] = (amee_val, t)
 
+        curves['eme'][t]        = eme_val
+            curves['emee'][t]       = emee_val
+            curves['ame'][t]        = ame_val
+            curves['eme_log'][t]    = eme_log_val
+            curves['visibility'][t] = visibility_val
+            curves['amee'][t]       = amee_val
+
         print(f"Image {idx+1} best t values:")
         for metric, (val, t_opt) in best.items():
             print(f"  {metric}: t = {t_opt} (value = {val:.4f})")
         print('\n')
+
+generate_plots(image, idx, curves, best)
+ 
+def generate_plots(image, idx, curves, best):
+    img_label = f"Image {idx+1}"
+    labels = ['eme', 'emee', 'ame', 'eme_log', 'visibility', 'amee']
+    titles = ['EME', 'EMEE', 'AME', 'EME_LOG', 'Visibility', 'AMEE']
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b']
+ 
+    os.makedirs('plots', exist_ok=True)
+    os.makedirs('enhanced', exist_ok=True)
+ 
+    Imin = int(np.min(image))
+    Imax = int(np.max(image))
+ 
+
+    for key, title, color in zip(labels, titles, colors):
+        t_opt = best[key][1]
+        curve = curves[key]
+        fig, ax = plt.subplots(figsize=(8, 4))
+        ax.plot(range(256), curve, color=color, linewidth=1.5)
+        ax.axvline(t_opt, color='red', linestyle='--', linewidth=1.2, label=f't_opt = {t_opt}')
+        ax.scatter([t_opt], [curve[t_opt]], color='red', zorder=5, s=60)
+        ax.set_title(f'{img_label} — {title} vs t', fontsize=13, fontweight='bold')
+        ax.set_xlabel('Threshold t', fontsize=11)
+        ax.set_ylabel(title, fontsize=11)
+        ax.legend(fontsize=10)
+        ax.grid(alpha=0.3)
+        plt.tight_layout()
+        plt.savefig(f'plots/{img_label}_{title}.png', dpi=130)
+        plt.close()
+ 
+
+    for key, title in zip(labels, titles):
+        t_opt = best[key][1]
+        enhanced_img = enhance.contrast_stretching(image, t_opt, Imin, Imax, 0, 255)
+        fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+        axes[0].imshow(image, cmap='gray', vmin=0, vmax=255)
+        axes[0].set_title('Original (preprocessed)', fontsize=11)
+        axes[0].axis('off')
+        axes[1].imshow(enhanced_img, cmap='gray', vmin=0, vmax=255)
+        axes[1].set_title(f'Enhanced — {title} (t_opt={t_opt})', fontsize=11)
+        axes[1].axis('off')
+        fig.suptitle(f'{img_label} — Optimal Enhanced Image [{title}]', fontsize=12, fontweight='bold')
+        plt.tight_layout()
+        plt.savefig(f'enhanced/{img_label}_{title}.png', dpi=130)
+        plt.close()
+
+
 
 if __name__ == "__main__":
     main()
